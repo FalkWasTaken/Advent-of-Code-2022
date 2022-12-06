@@ -1,10 +1,14 @@
-use itertools::Itertools;
+use std::collections::HashSet;
+
+fn unique(chars: &[char]) -> bool {
+    chars.len() == chars.iter().collect::<HashSet<_>>().len()
+}
 
 fn unique_window(stream: &Vec<char>, window_size: usize) -> usize {
     stream
         .windows(window_size)
         .enumerate()
-        .find(|(_, w)| w.iter().all_unique())
+        .find(|(_, w)| unique(w))
         .unwrap()
         .0
         + window_size
