@@ -1,4 +1,3 @@
-
 use Instruction::*;
 
 enum Instruction {
@@ -8,47 +7,81 @@ enum Instruction {
 
 impl From<&str> for Instruction {
     fn from(s: &str) -> Self {
-        if s == "noop" {
+        if  let Some((inst, val)) = s.split_once(" ") {
+            match inst {
+                "addx"  => Addx(val.parse().expect("Invalid value in addx operation!")),
+                _ => panic!("Invalid instruction!")
+            }
+        } else if s == "noop" {
             Noop
         } else {
-            let (inst, val) = s.split_once(" ").unwrap();
-            match inst {
-                
-            }
+            panic!("Invalid instruction!");
         }
     }
 }
 
-
 struct CPU {
     x: isize,
-    ops: Vec<(isize, usize)>
+    cycle: isize,
+    signal_sum: isize,
+    display: Vec<Vec<char>>
 }
 
 impl CPU {
     fn new() -> CPU {
         CPU {
             x: 1,
-            ops: vec![]
+            cycle: 1,
+            signal_sum: 0,
+            display: vec![vec!['.'; 40]; 6]
         }
     }
 
+    fn tick(&mut self) {
+        self.check_signal();
+        self.update_display();
+        self.cycle += 1;
+    }
+
+    fn check_signal(&mut self) {
+        if (self.cycle + 20) % 40 == 0 {
+            self.signal_sum += self.x * self.cycle;
+        } 
+    }
+
     fn execute(&mut self, inst: Instruction) {
-        match inst {
-            Noop => {},
-            Addx(v) => self.ops.push((v, 2)),
+        self.tick();
+        if let Addx(v) = inst {
+            self.tick();
+            self.x += v;
         }
-        for op in self.ops.iter_mut() {
-            op.1 -= 1;
-            if op.1 == 0 {
-                self.x += op.0;
+    }
+
+    fn update_display(&mut self) {
+        let row = (self.cycle - 1) / 40;
+        let pixel = (self.cycle - 1) % 40;
+        if (pixel-1..=pixel+1).contains(&self.x) {
+            self.display[row as usize][pixel as usize] = '#';
+        }
+    }
+
+    fn print_display(&self) {
+        println!("Display:");
+        for row in &self.display {
+            for pixel in row {
+                print!("{pixel}");
             }
+            println!();
         }
-        self.ops.retain(|op| op.1 > 0);
     }
 }
 
 fn main() {
     let input = std::fs::read_to_string("inputs/day10.in").unwrap();
-
+    let mut cpu = CPU::new();
+    for inst in input.lines().map(Instruction::from) {
+        cpu.execute(inst);
+    }
+    println!("Solution to problem 1: {}", cpu.signal_sum);
+    cpu.print_display();
 }
