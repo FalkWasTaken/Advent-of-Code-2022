@@ -1,4 +1,5 @@
 use std::collections::HashSet;
+use utils::get_input;
 
 fn unique(chars: &[char]) -> bool {
     chars.len() == chars.iter().collect::<HashSet<_>>().len()
@@ -25,7 +26,7 @@ fn solve2(stream: &Vec<char>) {
 }
 
 fn main() {
-    let input = std::fs::read_to_string("inputs/day6.in").unwrap();
+    let input = get_input(6);
     let stream = input.chars().collect();
     solve1(&stream);
     solve2(&stream);

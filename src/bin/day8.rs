@@ -1,9 +1,6 @@
 use itertools::Itertools;
+use utils::{TupleMap, get_input};
 use Direction::*;
-
-fn map_tup<I, T>(t: (I, I), f: fn(I) -> T) -> (T, T) {
-    (f(t.0), f(t.1))
-}
 
 enum Direction {
     Up,
@@ -16,8 +13,8 @@ fn fill_visited(grid: &Vec<Vec<u32>>, visited: &mut Vec<Vec<bool>>, direction: D
     let len_i = grid.len();
     let len_j = grid[0].len();
     let (range_i, range_j) = match direction {
-        Up | Left => map_tup((0..len_i, 0..len_j), |r| r.rev().collect_vec()),
-        Down | Right => map_tup((0..len_i, 0..len_j), |r| r.collect()),
+        Up | Left => (0..len_i, 0..len_j).map(|r| r.rev().collect_vec()),
+        Down | Right => (0..len_i, 0..len_j).map(|r| r.collect()),
     };
     match direction {
         Left | Right => {
@@ -92,11 +89,11 @@ fn sovle2(grid: &Vec<Vec<u32>>) {
 }
 
 fn main() {
-    let input = std::fs::read_to_string("inputs/day8.in").unwrap();
-    let grid: Vec<Vec<u32>> = input
+    let input = get_input(8);
+    let grid = input
         .lines()
-        .map(|l| l.chars().filter_map(|c| c.to_digit(10)).collect())
-        .collect();
+        .map(|l| l.chars().filter_map(|c| c.to_digit(10)).collect_vec())
+        .collect_vec();
     solve1(&grid);
     sovle2(&grid);
 }

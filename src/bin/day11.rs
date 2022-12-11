@@ -1,20 +1,6 @@
-use itertools::Itertools;
 use num::Integer;
-
+use utils::*;
 use Operation::*;
-
-trait ExtendedIter: Iterator {
-    fn pop(&mut self) -> Self::Item {
-        self.next().unwrap()
-    }
-    fn pop_back(&mut self) -> Self::Item
-    where
-        Self: DoubleEndedIterator,
-    {
-        self.next_back().unwrap()
-    }
-}
-impl<I: Iterator> ExtendedIter for I {}
 
 #[derive(Clone)]
 enum Operation {
@@ -114,11 +100,7 @@ fn solve1(mut monkeys: Vec<Monkey>) {
 }
 
 fn solve2(mut monkeys: Vec<Monkey>) {
-    let lcm = monkeys
-        .iter()
-        .map(|m| m.test)
-        .reduce(|acc, t| acc.lcm(&t))
-        .unwrap();
+    let lcm = monkeys.iter().map(|m| m.test).reduce(|acc, t| acc.lcm(&t)).unwrap();
     for _ in 0..10_000 {
         for id in 0..monkeys.len() {
             let items = monkeys[id].make_turn(1);
@@ -131,7 +113,7 @@ fn solve2(mut monkeys: Vec<Monkey>) {
 }
 
 fn main() {
-    let input = std::fs::read_to_string("inputs/day11.in").unwrap();
+    let input = get_input(11);
     let monkeys = input.split("\n\n").map(Monkey::from).collect_vec();
     solve1(monkeys.clone());
     solve2(monkeys);

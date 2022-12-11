@@ -1,5 +1,6 @@
 use lazy_static::lazy_static;
 use std::collections::{HashMap, HashSet};
+use utils::{get_input, ExtendedIter};
 
 lazy_static! {
     static ref PRIORITIES: HashMap<char, usize> = ('a'..='z')
@@ -8,14 +9,6 @@ lazy_static! {
         .map(|(i, c)| (c, i + 1))
         .collect();
 }
-
-trait ExtendedIter: Iterator {
-    fn pop(&mut self) -> Self::Item {
-        self.next().unwrap()
-    }
-}
-
-impl<I: Iterator> ExtendedIter for I {}
 
 fn char_set(s: &str) -> HashSet<char> {
     s.chars().collect()
@@ -47,7 +40,7 @@ fn solve2(input: &String) {
 }
 
 fn main() {
-    let input = std::fs::read_to_string("inputs/day3.in").unwrap();
+    let input = get_input(3);
     solve1(&input);
     solve2(&input);
 }

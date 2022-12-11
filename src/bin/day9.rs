@@ -3,6 +3,7 @@ use std::{
     collections::HashSet,
     ops::{Add, AddAssign, Sub},
 };
+use utils::get_input;
 
 #[derive(Default, PartialEq, Eq, Hash, Clone, Copy)]
 struct Pos(isize, isize);
@@ -101,7 +102,7 @@ fn solve2(moves: &Vec<Pos>) {
 }
 
 fn main() {
-    let input = std::fs::read_to_string("inputs/day9.in").unwrap();
+    let input = get_input(9);
     let moves = input.lines().map(Pos::from).collect_vec();
     solve1(&moves);
     solve2(&moves);

@@ -1,4 +1,5 @@
 use Instruction::*;
+use utils::get_input;
 
 enum Instruction {
     Noop,
@@ -77,7 +78,7 @@ impl CPU {
 }
 
 fn main() {
-    let input = std::fs::read_to_string("inputs/day10.in").unwrap();
+    let input = get_input(10);
     let mut cpu = CPU::new();
     for inst in input.lines().map(Instruction::from) {
         cpu.execute(inst);

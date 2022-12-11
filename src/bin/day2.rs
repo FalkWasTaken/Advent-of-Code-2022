@@ -1,11 +1,10 @@
-use std::io::stdin;
-
+use utils::get_input;
 
 #[derive(PartialEq, Eq, Ord, Copy, Clone)]
 enum Shape {
     Rock,
     Paper,
-    Scissor
+    Scissor,
 }
 
 impl Shape {
@@ -13,7 +12,7 @@ impl Shape {
         match self {
             Self::Rock => 1,
             Self::Paper => 2,
-            Self::Scissor => 3
+            Self::Scissor => 3,
         }
     }
 
@@ -52,7 +51,7 @@ impl Shape {
             "X" => self.lose(),
             "Y" => self.draw(),
             "Z" => self.win(),
-            _ => panic!()
+            _ => panic!(),
         }
     }
 }
@@ -63,7 +62,7 @@ impl From<&str> for Shape {
             "X" | "A" => Self::Rock,
             "Y" | "B" => Self::Paper,
             "Z" | "C" => Self::Scissor,
-            _ => panic!()
+            _ => panic!(),
         }
     }
 }
@@ -71,7 +70,7 @@ impl From<&str> for Shape {
 impl PartialOrd for Shape {
     fn partial_cmp(&self, other: &Self) -> Option<std::cmp::Ordering> {
         if self == other {
-            return Some(std::cmp::Ordering::Equal)
+            return Some(std::cmp::Ordering::Equal);
         }
         match self {
             Self::Rock => {
@@ -80,30 +79,29 @@ impl PartialOrd for Shape {
                 } else {
                     Some(std::cmp::Ordering::Greater)
                 }
-            },
+            }
             Self::Paper => {
                 if matches!(other, Self::Scissor) {
                     Some(std::cmp::Ordering::Less)
                 } else {
                     Some(std::cmp::Ordering::Greater)
                 }
-            },
+            }
             Self::Scissor => {
                 if matches!(other, Self::Rock) {
                     Some(std::cmp::Ordering::Less)
                 } else {
                     Some(std::cmp::Ordering::Greater)
                 }
-            },
+            }
         }
     }
 }
 
 fn main() {
-    let res: usize = stdin()
+    let res = get_input(2)
         .lines()
-        .map(|l| l.unwrap())
         .map(|v| Shape::from(&v[0..1]).with_outcome(&v[2..3]))
-        .sum();
+        .sum::<usize>();
     println!("{res}");
 }

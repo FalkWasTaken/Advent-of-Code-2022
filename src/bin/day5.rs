@@ -1,3 +1,5 @@
+use utils::get_input;
+
 type Stacks = Vec<Vec<char>>;
 
 struct Move {
@@ -41,10 +43,10 @@ fn process2(mut stacks: Vec<Vec<char>>, moves: &Vec<Move>) {
 }
 
 fn main() {
-    let input = std::fs::read_to_string("inputs/day5.in").unwrap();
+    let input = get_input(5);
     let (stacks, moves) = input.split_once("\n\n").unwrap();
-    let stacks = stacks.lines().map(|l| l.chars().collect()).collect();
+    let stacks: Stacks = stacks.lines().map(|l| l.chars().collect()).collect();
     let moves = moves.lines().map(Move::from).collect();
-    //process1(stacks, &moves);
+    process1(stacks.clone(), &moves);
     process2(stacks, &moves);
 }

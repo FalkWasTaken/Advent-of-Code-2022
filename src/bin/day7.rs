@@ -1,19 +1,8 @@
 use std::{collections::HashMap, iter::once};
+use utils::{get_input, ExtendedIter};
 
 const TOTAL_SPACE: usize = 70_000_000;
 const REQ_SPACE: usize = 30_000_000;
-
-trait ExtendIter: Iterator + Sized {
-    fn pop(&mut self) -> Self::Item {
-        self.next().unwrap()
-    }
-
-    fn collect_vec(self) -> Vec<Self::Item> {
-        self.collect()
-    }
-}
-
-impl<I: Iterator> ExtendIter for I {}
 
 #[derive(Debug)]
 enum Command {
@@ -57,18 +46,11 @@ impl Directory {
         if path.len() == 0 {
             return self;
         }
-        self.content
-            .get_mut(&path[0])
-            .unwrap()
-            .traverse_mut(&path[1..])
+        self.content.get_mut(&path[0]).unwrap().traverse_mut(&path[1..])
     }
 
     fn update_sizes(&mut self) -> usize {
-        self.len += self
-            .content
-            .values_mut()
-            .map(|d| d.update_sizes())
-            .sum::<usize>();
+        self.len += self.content.values_mut().map(|d| d.update_sizes()).sum::<usize>();
         self.len
     }
 
@@ -110,25 +92,18 @@ impl FileSystem {
 }
 
 fn solve1(fs: &FileSystem) {
-    let res: usize = fs
-        .file_tree
-        .iter()
-        .map(|d| d.len)
-        .filter(|&size| size <= 100000)
-        .sum();
-    println!("{res}")
+    let res: usize = fs.file_tree.iter().map(|d| d.len).filter(|&size| size <= 100000).sum();
+    println!("Solution to problem 1: {res}")
 }
 
 fn solve2(fs: &FileSystem) {
     let target = fs.file_tree.len + REQ_SPACE - TOTAL_SPACE;
-    let mut res = fs.file_tree.iter().map(|d| d.len).collect_vec();
-    res.sort();
-    let res = res.iter().find(|&&s| s >= target).unwrap();
-    println!("{res}")
+    let res = fs.file_tree.iter().map(|d| d.len).sort().find(|&s| s >= target).unwrap();
+    println!("Solution to problem 2: {res}")
 }
 
 fn main() {
-    let input = std::fs::read_to_string("inputs/day7.in").unwrap();
+    let input = get_input(7);
     let mut fs = FileSystem::new();
     for command in input.split("$").skip(1) {
         let command = Command::from(command);

@@ -1,4 +1,4 @@
-use std::io::stdin;
+use utils::{get_input, TupleMap};
 
 #[derive(PartialEq, Eq)]
 struct Range {
@@ -39,29 +39,30 @@ impl Range {
     }
 }
 
-fn line_to_ranges(line: String) -> (Range, Range) {
-    let (r1, r2) = line.split_once(",").unwrap();
-    (r1.into(), r2.into())
+fn line_to_ranges(line: &str) -> (Range, Range) {
+    line.split_once(",").unwrap().map(Range::from)
 }
 
-fn problem1() -> usize {
-    stdin()
+fn problem1(input: &String) {
+    let res = input
         .lines()
-        .map(|l| line_to_ranges(l.unwrap()))
+        .map(|l| line_to_ranges(l))
         .filter_map(|(r1, r2)| r1.partial_cmp(&r2))
-        .count()
+        .count();
+    println!("Solution to problem 1: {res}");
 }
 
-fn problem2() -> usize {
-    stdin()
+fn problem2(input: &String) {
+    let res = input
         .lines()
-        .map(|l| line_to_ranges(l.unwrap()))
+        .map(|l| line_to_ranges(l))
         .filter(|(r1, r2)| r1.overlaps_with(&r2))
-        .count()
+        .count();
+    println!("Solution to problem 1: {res}");
 }
 
 fn main() {
-    //let res = problem1();
-    let res = problem2();
-    println!("{res}")
+    let input = get_input(4);
+    problem1(&input);
+    problem2(&input);
 }
