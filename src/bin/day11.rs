@@ -1,6 +1,7 @@
 use num::Integer;
 use utils::*;
 use Operation::*;
+use itertools::Itertools;
 
 #[derive(Clone)]
 enum Operation {

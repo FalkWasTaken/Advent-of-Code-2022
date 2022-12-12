@@ -1,5 +1,6 @@
 use std::cmp::Reverse;
-use utils::{get_input, ExtendedIter};
+use utils::get_input;
+use itertools::Itertools;
 
 fn main() {
     let mut callories = get_input(1)

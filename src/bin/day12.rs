@@ -1,3 +1,4 @@
+use itertools::Itertools;
 use std::collections::VecDeque;
 use std::ops::{Deref, Index};
 use utils::*;
@@ -69,38 +70,27 @@ impl From<&str> for Grid {
         }
     }
 }
+
 impl Grid {
     fn start_pos(&self) -> Pos {
         (0..self.len())
-            .flat_map(|i| (0..self[0].len()).map(move |j| (i, j)))
+            .cartesian_product(0..self[0].len())
             .find(|&pos| self[pos].start)
-            .unwrap()
+            .expect("No start point defined!")
     }
 
-    fn valid_height(&self, from: usize, to: usize) -> bool {
+    fn accept_next(&self, from: Pos, to: Pos) -> bool {
         match self.rev {
-            false => to <= from + 1,
-            true => to >= from - 1,
+            false => self[to].height <= self[from].height + 1,
+            true => self[to].height >= self[from].height - 1,
         }
     }
 
-    fn get_neighbors(&self, (i, j): Pos) -> Vec<Pos> {
-        let mut res = Vec::with_capacity(4);
-        let height = self[i][j].height;
-        if i > 0 {
-            res.push((i - 1, j));
-        }
-        if i < self.len() - 1 {
-            res.push((i + 1, j));
-        }
-        if j > 0 {
-            res.push((i, j - 1));
-        }
-        if j < self[0].len() - 1 {
-            res.push((i, j + 1));
-        }
-        res.retain(|&pos| self.valid_height(height, self[pos].height));
-        res
+    fn get_neighbors(&self, (i, j): Pos) -> impl Iterator<Item = Pos> + '_ {
+        (1.max(i) - 1..=(self.len() - 1).min(i + 1))
+            .map(move |i2| (i2, j))
+            .chain((1.max(j) - 1..=(self[0].len() - 1).min(j + 1)).map(move |j2| (i, j2)))
+            .filter(move |&to| self.accept_next((i, j), to))
     }
 
     fn bfs(&self) -> usize {

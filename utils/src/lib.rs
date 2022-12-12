@@ -1,9 +1,5 @@
 
 pub trait ExtendedIter: Iterator + Sized {
-    fn collect_vec(self) -> Vec<Self::Item> {
-        self.collect()
-    }
-
     fn pop(&mut self) -> Self::Item {
         self.next().unwrap()
     }
