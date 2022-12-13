@@ -2,7 +2,6 @@ use std::{cmp::Ordering, collections::VecDeque};
 
 use utils::*;
 
-use itertools::Itertools;
 use Packet::*;
 
 type TokenStream = VecDeque<Token>;
@@ -76,19 +75,18 @@ fn tokenize_line(l: &str) -> TokenStream {
     tokens
 }
 
-fn solve1(pairs: &Vec<(Packet, Packet)>) {
-    let res = pairs
-        .iter()
+fn solve1(packets: &Vec<Packet>) {
+    let res = packets
+        .chunks(2)
         .enumerate()
-        .filter(|(_, (p1, p2))| p1 <= p2)
+        .filter(|(_, p)| p[0] <= p[1])
         .map(|(i, _)| i + 1)
         .sum::<usize>();
     println!("Solution to problem 1: {res}");
 }
 
-fn solve2(pairs: Vec<(Packet, Packet)>) {
-    let separators = [Value(2).to_list().to_list(), Value(6).to_list().to_list()];
-    let mut packets = pairs.into_iter().flat_map(|p| [p.0, p.1]).collect_vec();
+fn solve2(mut packets: Vec<Packet>) {
+    let separators = [Packet::parse("[[2]]"), Packet::parse("[[6]]")];
     packets.extend_from_slice(&separators);
     packets.sort();
     let key = packets
@@ -101,11 +99,11 @@ fn solve2(pairs: Vec<(Packet, Packet)>) {
 }
 
 fn main() {
-    let input = get_input(13);
-    let pairs = input
-        .split("\n\n")
-        .map(|pair| pair.split_once("\n").unwrap().map(Packet::parse))
+    let packets = input!()
+        .lines()
+        .filter(|l| !l.is_empty())
+        .map(|l| Packet::parse(l))
         .collect();
-    solve1(&pairs);
-    solve2(pairs);
+    solve1(&packets);
+    solve2(packets);
 }
