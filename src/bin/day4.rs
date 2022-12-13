@@ -1,4 +1,4 @@
-use utils::{get_input, TupleMap};
+use utils::{get_input, ExtendedTup};
 
 #[derive(PartialEq, Eq)]
 struct Range {

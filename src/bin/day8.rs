@@ -1,5 +1,5 @@
 use itertools::Itertools;
-use utils::{TupleMap, get_input};
+use utils::{ExtendedTup, get_input};
 use Direction::*;
 
 enum Direction {
