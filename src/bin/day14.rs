@@ -2,9 +2,7 @@
 
 use std::{
     collections::VecDeque,
-    fmt::{Debug, Display, Write as FmtWrite},
     ops::{Index, IndexMut},
-    io::Write as IoWrite
 };
 
 use itertools::Itertools;

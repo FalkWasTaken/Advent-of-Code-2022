@@ -9,6 +9,7 @@ use std::{
 
 use clap::{Parser, ValueEnum};
 use itertools::Itertools;
+use rand::prelude::*;
 use termion::{
     color::{self, Rgb},
     cursor::{Goto, HideCursor},
@@ -20,7 +21,7 @@ use Particle::*;
 
 const AIR_COLOR: Rgb = Rgb(50, 50, 50);
 const ROCK_COLOR: Rgb = Rgb(216, 216, 216);
-const SAND_COLOR: Rgb = Rgb(245, 213, 159);
+//const SAND_COLOR: Rgb = Rgb(245, 213, 159);
 
 const FPS: u64 = 30;
 
@@ -62,7 +63,17 @@ fn parse_path(s: &str) -> Path {
 enum Particle {
     Air,
     Rock,
-    Sand,
+    Sand(Rgb),
+}
+
+impl Particle {
+    fn random_sand() -> Particle {
+        let mut rng = thread_rng();
+        let r = rng.gen_range(100..=255);
+        let g = rng.gen_range(100..=255);
+        let b = rng.gen_range(100..=255);
+        Sand(color::Rgb(r, g, b))
+    }
 }
 
 impl Display for Particle {
@@ -70,7 +81,7 @@ impl Display for Particle {
         match self {
             Air => f.write_fmt(format_args!("{}.", color::Fg(AIR_COLOR))),
             Rock => f.write_fmt(format_args!("{}#", color::Fg(ROCK_COLOR))),
-            Sand => f.write_fmt(format_args!("{}o", color::Fg(SAND_COLOR))),
+            Sand(color) => f.write_fmt(format_args!("{}O", color::Fg(color.clone()))),
         }
     }
 }
@@ -151,7 +162,7 @@ impl Grid {
         for (y, row) in self.grid.iter().enumerate() {
             write!(stdout, "{}", Goto(1, y as u16 + 1)).unwrap();
             for (x, &sqr) in row.iter().enumerate() {
-                if (x, y) == self.src && !matches!(sqr, Sand) {
+                if (x, y) == self.src && !matches!(sqr, Sand(_)) {
                     write!(stdout, "+").unwrap();
                 } else {
                     write!(stdout, "{sqr}").unwrap();
@@ -162,14 +173,14 @@ impl Grid {
 
     fn sim_parallel(&mut self, fps: u64) {
         let src = self.src;
-        let mut sand = VecDeque::from([src]);
+        let mut sand = VecDeque::from([(src, Particle::random_sand())]);
         let mut should_spawn = true;
         println!("{}", termion::clear::All);
         self.display();
-        self[src] = Sand;
+        self[src] = sand[0].1;
         while !sand.is_empty() {
-            let mut next_queue = VecDeque::with_capacity(sand.len());
-            while let Some(mut pos) = sand.pop_front() {
+            let mut next_queue: VecDeque<((usize, usize), Particle)> = VecDeque::with_capacity(sand.len());
+            while let Some((mut pos, particle)) = sand.pop_front() {
                 if pos.1 == self.len().1 - 1 {
                     if !self.has_floor {
                         should_spawn = false;
@@ -178,8 +189,8 @@ impl Grid {
                 } else if pos.0 == 0 {
                     if self.has_floor {
                         self.extend_left(1);
-                        next_queue.iter_mut().for_each(|p: &mut Pos| p.0 += 1);
-                        sand.iter_mut().for_each(|p| p.0 += 1);
+                        next_queue.iter_mut().for_each(|p| p.0.0 += 1);
+                        sand.iter_mut().for_each(|p| p.0.0 += 1);
                         pos.0 += 1;
                     } else {
                         should_spawn = false;
@@ -198,15 +209,15 @@ impl Grid {
                 match next_pos(pos).iter().find(|&&p| matches!(self[p], Air)) {
                     Some(&new_pos) => {
                         self[pos] = Air;
-                        self[new_pos] = Sand;
-                        next_queue.push_back(new_pos);
+                        self[new_pos] = particle;
+                        next_queue.push_back((new_pos, particle));
                     }
-                    None => self[pos] = Sand,
+                    None => self[pos] = particle,
                 }
             }
             sand = next_queue;
             if should_spawn && self.can_spawn() {
-                sand.push_back(self.src);
+                sand.push_back((self.src, Particle::random_sand()));
             }
             std::thread::sleep(std::time::Duration::from_millis(1000 / fps));
             self.display();
@@ -216,7 +227,7 @@ impl Grid {
 
 impl Drop for Grid {
     fn drop(&mut self) {
-        println!("{}{}", termion::style::Reset, Goto(1, self.len().1 as u16))
+        println!("{}{}{}", termion::style::Reset, Goto(1, self.len().1 as u16), termion::cursor::Restore)
     }
 }
 
