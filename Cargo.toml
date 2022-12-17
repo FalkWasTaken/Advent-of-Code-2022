@@ -16,4 +16,5 @@ parse-display = "0.7.0"
 termion = "2.0.1"
 clap = { version = "4.0.29", features = ["derive"] }
 rand = "0.8.5"
+rayon = "1.6.1"
 utils = { path = "utils" }
