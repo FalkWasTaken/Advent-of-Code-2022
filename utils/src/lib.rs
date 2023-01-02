@@ -3,6 +3,14 @@ pub trait ExtendedIter: Iterator + Sized {
         self.next().unwrap()
     }
 
+    fn pop2(&mut self) -> (Self::Item, Self::Item) {
+        (self.pop(), self.pop())
+    }
+
+    fn pop3(&mut self) -> (Self::Item, Self::Item, Self::Item) {
+        (self.pop(), self.pop(), self.pop())
+    }
+
     fn pop_back(&mut self) -> Self::Item
     where
         Self: DoubleEndedIterator,
