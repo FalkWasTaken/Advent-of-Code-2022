@@ -1,6 +1,6 @@
 use std::{
-    collections::HashMap,
-    ops::{Index, IndexMut}, sync::Mutex,
+    ops::{Index, IndexMut},
+    sync::Mutex,
 };
 
 use nom::{
@@ -10,38 +10,16 @@ use nom::{
     IResult,
 };
 
-use rand::prelude::random;
-
 use rayon::prelude::{IntoParallelRefIterator, ParallelIterator};
 use utils::*;
 use Resource::*;
 
-const TEST: &str = "Blueprint 1: Each ore robot costs 4 ore. Each clay robot costs 2 ore. Each obsidian robot costs 3 ore and 14 clay. Each geode robot costs 2 ore and 7 obsidian.
-Blueprint 2: Each ore robot costs 2 ore. Each clay robot costs 3 ore. Each obsidian robot costs 3 ore and 8 clay. Each geode robot costs 3 ore and 12 obsidian.";
-
-#[derive(PartialEq, Eq, Hash, Debug, Clone, Copy, Ord)]
+#[derive(PartialEq, Eq, Clone, Copy)]
 enum Resource {
     Ore,
     Clay,
     Obsidian,
     Geode,
-}
-
-impl Resource {
-    fn priority(&self) -> u8 {
-        match self {
-            Ore => 3,
-            Clay => 2,
-            Obsidian => 1,
-            Geode => 0,
-        }
-    }
-}
-
-impl PartialOrd for Resource {
-    fn partial_cmp(&self, other: &Self) -> Option<std::cmp::Ordering> {
-        self.priority().partial_cmp(&other.priority())
-    }
 }
 
 #[derive(Debug, Clone, Default, PartialEq, Eq)]
@@ -75,21 +53,6 @@ impl<T> IndexMut<Resource> for ResourceMap<T> {
     }
 }
 
-impl<T> From<[(Resource, T); 4]> for ResourceMap<T> {
-    fn from(mut arr: [(Resource, T); 4]) -> Self {
-        arr.sort_by_key(|t| t.0);
-        match arr {
-            [(Geode, geode), (Obsidian, obsidian), (Clay, clay), (Ore, ore)] => ResourceMap {
-                ore,
-                clay,
-                obsidian,
-                geode,
-            },
-            _ => panic!(),
-        }
-    }
-}
-
 impl<T> ResourceMap<T> {
     fn iter(&self) -> ResourceIter<T> {
         ResourceIter {
@@ -100,23 +63,6 @@ impl<T> ResourceMap<T> {
                 (Ore, &self.ore),
             ],
             index: 0,
-        }
-    }
-}
-
-impl<T: Ord> PartialOrd for ResourceMap<T> {
-    fn partial_cmp(&self, other: &Self) -> Option<std::cmp::Ordering> {
-        let ge = |f: fn(&ResourceMap<T>) -> &T| f(&self) > f(other);
-        let le = |f: fn(&ResourceMap<T>) -> &T| f(&self) < f(other);
-        let eq = |f: fn(&ResourceMap<T>) -> &T| f(&self) == f(other);
-        if ge(|r| &r.ore) && ge(|r| &r.clay) && ge(|r| &r.obsidian) && ge(|r| &r.geode) {
-            Some(std::cmp::Ordering::Greater)
-        } else if eq(|r| &r.ore) && eq(|r| &r.clay) && eq(|r| &r.obsidian) && eq(|r| &r.geode) {
-            Some(std::cmp::Ordering::Equal)
-        } else if le(|r| &r.ore) && le(|r| &r.clay) && le(|r| &r.obsidian) && le(|r| &r.geode) {
-            Some(std::cmp::Ordering::Less)
-        } else {
-            None
         }
     }
 }
@@ -138,47 +84,12 @@ impl<'a, T> Iterator for ResourceIter<'a, T> {
     }
 }
 
-#[derive(Clone, Debug)]
-struct Cacher {
-    seeds: ResourceMap<u32>,
-    cache: HashMap<u32, ResourceMap<u32>>,
-}
-
-impl Cacher {
-    fn new() -> Cacher {
-        Cacher {
-            seeds: [
-                (Ore, random()),
-                (Clay, random()),
-                (Obsidian, random()),
-                (Geode, random()),
-            ]
-            .into(),
-            cache: HashMap::new(),
-        }
-    }
-
-    fn cache_robots(&self, robots: &ResourceMap<u32>, time: u32) -> u32 {
-        let hash = |resource| self.seeds[resource] ^ robots[resource];
-        hash(Ore) ^ hash(Clay) ^ hash(Obsidian) ^ hash(Geode) ^ time
-    }
-
-    fn get(&self, k: &u32) -> Option<&ResourceMap<u32>> {
-        self.cache.get(k)
-    }
-
-    fn insert(&mut self, k: u32, v: ResourceMap<u32>) {
-        self.cache.insert(k, v);
-    }
-}
-
-#[derive(Debug, Clone)]
+#[derive(Clone)]
 struct Blueprint {
     id: u32,
     robot_costs: ResourceMap<Vec<(Resource, u32)>>,
     robots: ResourceMap<u32>,
     resources: ResourceMap<u32>,
-    cache: Cacher,
 }
 
 fn parse1<'a>(s: &'a str, robot_type: &'a str) -> IResult<&'a str, u32> {
@@ -215,18 +126,14 @@ impl Blueprint {
         let (s, clay_cost) = parse1(s, "clay")?;
         let (s, (obs_cost_ore, obs_cost_clay)) = parse2(s, "obsidian", "ore", "clay")?;
         let (s, (geode_cost_ore, geode_cost_obs)) = parse2(s, "geode", "ore", "obsidian")?;
-        let robot_costs = [
-            (Ore, vec![(Ore, ore_cost)]),
-            (Clay, vec![(Ore, clay_cost)]),
-            (Obsidian, vec![(Ore, obs_cost_ore), (Clay, obs_cost_clay)]),
-            (
-                Geode,
-                vec![(Ore, geode_cost_ore), (Obsidian, geode_cost_obs)],
-            ),
-        ]
-        .into();
-        let robots = [(Ore, 1), (Clay, 0), (Obsidian, 0), (Geode, 0)].into();
-        let resources = [(Ore, 0), (Clay, 0), (Obsidian, 0), (Geode, 0)].into();
+        let mut robot_costs = ResourceMap::default();
+        robot_costs[Ore] = vec![(Ore, ore_cost)];
+        robot_costs[Clay] = vec![(Ore, clay_cost)];
+        robot_costs[Obsidian] = vec![(Ore, obs_cost_ore), (Clay, obs_cost_clay)];
+        robot_costs[Geode] = vec![(Ore, geode_cost_ore), (Obsidian, geode_cost_obs)];
+        let mut robots = ResourceMap::default();
+        robots[Ore] = 1;
+        let resources = ResourceMap::default();
         Ok((
             s,
             Blueprint {
@@ -234,7 +141,6 @@ impl Blueprint {
                 robot_costs,
                 robots,
                 resources,
-                cache: Cacher::new(),
             },
         ))
     }
@@ -264,7 +170,7 @@ impl Blueprint {
     }
 
     fn max_geodes(&self, time: u32) -> u32 {
-        self.clone().max_geo_rec(time)
+        self.clone().max_geo_rec(time, 0)
     }
 
     fn collect_resources(&mut self) {
@@ -281,40 +187,27 @@ impl Blueprint {
         self.resources = backup.clone();
     }
 
-    fn max_geo_rec(&mut self, time: u32) -> u32 {
+    fn max_potential(&self, time: u32) -> u32 {
+        self.resources[Geode] + self.robots[Geode] * time + (time - 1) * (time) / 2
+    }
+
+    fn max_geo_rec(&mut self, time: u32, max: u32) -> u32 {
         if time == 0 {
             return self.resources[Geode];
-        }
-        let robot_hash = self.cache.cache_robots(&self.robots, time);
-        if let Some(resources) = self.cache.get(&robot_hash) {
-            if *resources >= self.resources {
-                return 0;
-            } else {
-                self.cache.insert(robot_hash, self.resources.clone());
-            }
-        } else {
-            self.cache.insert(robot_hash, self.resources.clone());
-        }
+        } else if self.max_potential(time) <= max {
+            return 0;
+        };
         let new = self.available_robots();
-        self.collect_resources(); 
+        self.collect_resources();
         let backup = self.backup_resources();
         let mut res = 0;
-        if new.contains(&Geode) {
-            self.construct_robot(Geode);
-            res = self.max_geo_rec(time - 1);
-            self.destroy_robot(Geode);
-        } else {
-            for robot_type in [Obsidian, Ore, Clay] {
-                if !new.contains(&robot_type) {
-                    continue;
-                }
-                self.construct_robot(robot_type);
-                res = res.max(self.max_geo_rec(time - 1));
-                self.destroy_robot(robot_type);
-                self.revert_backup(&backup);
-            }
-            res = res.max(self.max_geo_rec(time - 1));
+        for robot_type in new {
+            self.construct_robot(robot_type);
+            res = res.max(self.max_geo_rec(time - 1, res.max(max)));
+            self.destroy_robot(robot_type);
+            self.revert_backup(&backup);
         }
+        res = res.max(self.max_geo_rec(time - 1, res.max(max)));
         self.revert_backup(&backup);
         res
     }
@@ -327,7 +220,11 @@ fn solve1(blueprints: &Vec<Blueprint>) {
         .map(|b| (b.id, b.max_geodes(24)))
         .inspect(|(id, geodes)| {
             *progress.lock().unwrap() += 1;
-            println!("id: {id}\tmax_geodes: {geodes}\tprogress: {}/{}", progress.lock().unwrap(), blueprints.len())
+            println!(
+                "id: {id}\tmax_geodes: {geodes}\tprogress: {}/{}",
+                progress.lock().unwrap(),
+                blueprints.len()
+            )
         })
         .map(|(id, geodes)| id * geodes)
         .sum();
@@ -350,7 +247,6 @@ fn main() {
         .flat_map(Blueprint::parse)
         .map(|res| res.1)
         .collect();
-    //println!("{blueprints:?}");
     solve1(&blueprints);
     solve2(&blueprints);
 }
