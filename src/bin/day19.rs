@@ -53,8 +53,10 @@ impl<T> IndexMut<Resource> for ResourceMap<T> {
     }
 }
 
-impl<T> ResourceMap<T> {
-    fn iter(&self) -> ResourceIter<T> {
+impl<'a, T> IntoIterator for &'a ResourceMap<T> {
+    type IntoIter = ResourceIter<'a, T>;
+    type Item = (Resource, &'a T);
+    fn into_iter(self) -> Self::IntoIter {
         ResourceIter {
             arr: [
                 (Geode, &self.geode),
@@ -158,37 +160,18 @@ impl Blueprint {
             .all(|&(r, num)| self.resources[r] >= num)
     }
 
-    fn construct_robot(&mut self, robot_type: Resource) {
-        self.robots[robot_type] += 1;
-        for &(r, num) in &self.robot_costs[robot_type] {
-            self.resources[r] -= num;
-        }
-    }
-
-    fn destroy_robot(&mut self, robot_type: Resource) {
-        self.robots[robot_type] -= 1;
-    }
-
-    fn max_geodes(&self, time: u32) -> u32 {
-        self.clone().max_geo_rec(time, 0)
-    }
-
     fn collect_resources(&mut self) {
-        for (robot_type, num) in self.robots.iter() {
+        for (robot_type, num) in &self.robots {
             self.resources[robot_type] += num;
         }
     }
 
-    fn backup_resources(&mut self) -> ResourceMap<u32> {
-        self.resources.clone()
-    }
-
-    fn revert_backup(&mut self, backup: &ResourceMap<u32>) {
-        self.resources = backup.clone();
-    }
-
     fn max_potential(&self, time: u32) -> u32 {
         self.resources[Geode] + self.robots[Geode] * time + (time - 1) * (time) / 2
+    }
+
+    fn max_geodes(&self, time: u32) -> u32 {
+        self.clone().max_geo_rec(time, 0)
     }
 
     fn max_geo_rec(&mut self, time: u32, max: u32) -> u32 {
@@ -199,16 +182,19 @@ impl Blueprint {
         };
         let new = self.available_robots();
         self.collect_resources();
-        let backup = self.backup_resources();
+        let backup = self.resources.clone();
         let mut res = 0;
         for robot_type in new {
-            self.construct_robot(robot_type);
+            self.robots[robot_type] += 1;
+            for &(r, num) in &self.robot_costs[robot_type] {
+                self.resources[r] -= num;
+            }
             res = res.max(self.max_geo_rec(time - 1, res.max(max)));
-            self.destroy_robot(robot_type);
-            self.revert_backup(&backup);
+            self.robots[robot_type] -= 1;
+            self.resources = backup.clone();
         }
         res = res.max(self.max_geo_rec(time - 1, res.max(max)));
-        self.revert_backup(&backup);
+        self.resources = backup.clone();
         res
     }
 }
