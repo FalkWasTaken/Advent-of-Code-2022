@@ -1,51 +1,19 @@
-use nom::{
-    branch::alt,
-    bytes::complete::tag,
-    character::complete::digit1,
-    multi::{self, many1},
-    IResult,
-};
+use nom::{branch::alt, bytes::complete::tag, character::complete::digit1, multi::many1, IResult};
 use utils::*;
 
 use Direction::*;
 use Instruction::*;
 use Square::*;
 
-const TEST: &str = "        ...#
-        .#..
-        #...
-        ....
-...#.......#
-........#...
-..#....#....
-..........#.
-        ...#....
-        .....#..
-        .#......
-        ......#.
-
-10R5L5R10L4R5L5";
-
-#[derive(Debug, Clone, Copy)]
+#[derive(Clone, Copy)]
 enum Direction {
-    Left,
-    Right,
-    Up,
-    Down,
+    Left = 2,
+    Right = 0,
+    Up = 3,
+    Down = 1,
 }
 
-impl Direction {
-    fn as_usize(&self) -> usize {
-        match self {
-            Left => 2,
-            Right => 0,
-            Up => 3,
-            Down => 1,
-        }
-    }
-}
-
-#[derive(Clone, Copy, Debug)]
+#[derive(Clone, Copy)]
 enum Instruction {
     Turn(Direction),
     Walk(usize),
@@ -69,7 +37,6 @@ enum Square {
     Null,
 }
 
-#[derive(Debug)]
 struct Walker {
     instructions: Vec<Instruction>,
     grid: Vec<Vec<Square>>,
@@ -213,22 +180,15 @@ impl Walker {
                 Walk(dist) => self.walk(dist),
             }
         }
-        println!(
-            "x: {}, y: {}, facing: {}",
-            self.x + 1,
-            self.y + 1,
-            self.facing.as_usize()
-        );
     }
 
     fn calc_password(&self) -> usize {
-        (self.y + 1) * 1000 + (self.x + 1) * 4 + self.facing.as_usize()
+        (self.y + 1) * 1000 + (self.x + 1) * 4 + self.facing as usize
     }
 }
 
 fn main() {
     let mut walker = Walker::parse();
-    //println!("{:?}", walker);
     walker.simulate();
     println!("Solution to problem 1: {}", walker.calc_password());
 }
