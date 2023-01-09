@@ -39,7 +39,7 @@ impl Pos {
     }
 
     fn parse(s: &str) -> Pos {
-        let (x, y, z) = s.split(',').map(|num| num.parse().unwrap()).pop3();
+        let (x, y, z) = s.split(',').flat_map(str::parse).pop3();
         Pos { x, y, z }
     }
 
@@ -61,7 +61,7 @@ fn solve1(positions: &Vec<Pos>) {
     let set: HashSet<_> = positions.clone().into_iter().collect();
     let res = set
         .iter()
-        .flat_map(|p| p.around())
+        .flat_map(Pos::around)
         .filter(|p| !set.contains(p))
         .count();
     println!("Solution to problem 1: {res}");

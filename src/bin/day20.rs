@@ -1,3 +1,4 @@
+use itertools::Itertools;
 use utils::*;
 
 const DECRYPT_KEY: isize = 811_589_153;
@@ -24,17 +25,13 @@ impl File {
         }
     }
 
-    fn find_elem(&self, f: impl Fn(&(usize, &Elem)) -> bool) -> Option<(usize, &Elem)> {
-        self.list.iter().enumerate().find(f)
-    }
-
     fn align(&mut self) {
-        let (i, _) = self.find_elem(|(_, e)| e.val == 0).unwrap();
+        let i = self.list.iter().position(|e| e.val == 0).unwrap();
         self.list.rotate_left(i);
     }
 
     fn mix(&mut self) {
-        while let Some((i, e)) = self.find_elem(|(_, e)| e.init == self.current) {
+        while let Some((i, e)) = self.list.iter().find_position(|e| e.init == self.current) {
             let dest = ((i as isize + e.val).rem_euclid(self.len - 1)) as usize;
             if dest < i {
                 self.list[dest..=i].rotate_right(1);
@@ -77,7 +74,7 @@ fn main() {
     let file = File::new(
         input!()
             .lines()
-            .flat_map(|l| l.parse())
+            .flat_map(str::parse)
             .enumerate()
             .map(|(i, val)| Elem { init: i, val })
             .collect(),

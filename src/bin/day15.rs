@@ -89,7 +89,7 @@ fn solve2(sensors: &Vec<Sensor>) {
 }
 
 fn main() {
-    let sensors = input!().lines().map(Sensor::parse).collect_vec();
+    let sensors = input!().lines().map(Sensor::parse).collect();
     solve1(&sensors);
     solve2(&sensors);
 }

@@ -102,7 +102,7 @@ fn main() {
     let packets = input!()
         .lines()
         .filter(|l| !l.is_empty())
-        .map(|l| Packet::parse(l))
+        .map(Packet::parse)
         .collect();
     solve1(&packets);
     solve2(packets);

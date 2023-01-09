@@ -1,6 +1,10 @@
+use std::ops::Add;
+
+use itertools::EitherOrBoth::*;
+use itertools::Itertools;
 use utils::*;
 
-fn to_digit(c: char) -> isize {
+fn to_digit(c: char) -> i8 {
     match c {
         '0' => 0,
         '1' => 1,
@@ -11,7 +15,7 @@ fn to_digit(c: char) -> isize {
     }
 }
 
-fn to_char(d: &isize) -> char {
+fn to_char(d: &i8) -> char {
     match d {
         0 => '0',
         1 => '1',
@@ -22,11 +26,7 @@ fn to_char(d: &isize) -> char {
     }
 }
 
-fn pow(exp: usize) -> isize {
-    5_isize.pow(exp as u32)
-}
-
-struct SNAFU(Vec<isize>);
+struct SNAFU(Vec<i8>);
 
 impl SNAFU {
     fn from_str(s: &str) -> SNAFU {
@@ -36,50 +36,37 @@ impl SNAFU {
     fn to_string(&self) -> String {
         self.0.iter().rev().map(to_char).collect()
     }
+}
 
-    fn to_decimal(&self) -> isize {
-        self.0
-            .iter()
-            .enumerate()
-            .fold(0, |acc, (i, &d)| acc + d * pow(i))
-    }
-
-    fn from_decimal(num: isize) -> SNAFU {
-        let num_digits = (num as f64).log(5.0).ceil() as usize;
-        let mut snafu = SNAFU(vec![0; num_digits]);
-        snafu.from_dec_rec(num, num_digits - 1, 0);
-        snafu
-    }
-
-    fn from_dec_rec(&mut self, num: isize, current_digit: usize, total: isize) -> bool {
-        let exp = pow(current_digit);
-        let values = [-2, -1, 0, 1, 2];
-        let values = [
-            values.iter().find(|&&v| total + v * exp == num),
-            values.iter().find(|&&v| total + v * exp > num),
-            values.iter().rev().find(|&&v| total + v * exp < num),
-        ];
-        for &v in values.into_iter().filter_map(|v| v) {
-            let total = total + v * exp;
-            self.0[current_digit] = v;
-            if current_digit == 0 {
-                if total == num {
-                    return true;
-                }
-            } else if self.from_dec_rec(num, current_digit - 1, total) {
-                return true;
-            }
+impl Add<SNAFU> for SNAFU {
+    type Output = SNAFU;
+    fn add(self, rhs: SNAFU) -> Self::Output {
+        let mut rem = 0;
+        let mut vec = self
+            .0
+            .into_iter() 
+            .zip_longest(rhs.0)
+            .map(|t| {
+                let res = match t {
+                    Both(x, y) => x + y,
+                    Left(x) | Right(x) => x,
+                } + rem;
+                rem = (res < -2 || res > 2) as i8 * res.signum();
+                -5 * rem + res
+            })
+            .collect_vec();
+        if rem != 0 {
+            vec.push(rem);
         }
-        false
+        SNAFU(vec)
     }
 }
 
 fn main() {
-    let res: isize = input!()
+    let res = input!()
         .lines()
         .map(SNAFU::from_str)
-        .map(|n| n.to_decimal())
-        .sum();
-    let snafu = SNAFU::from_decimal(res);
-    println!("input: {}", snafu.to_string());
+        .reduce(|sum, n| sum + n)
+        .unwrap();
+    println!("Solution: {}", res.to_string());
 }

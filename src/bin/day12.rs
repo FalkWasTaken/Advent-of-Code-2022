@@ -1,6 +1,6 @@
 use itertools::Itertools;
 use std::collections::VecDeque;
-use std::ops::{Deref, Index};
+use std::ops::Index;
 use utils::*;
 
 struct GridSquare {
@@ -38,13 +38,6 @@ struct Grid {
     rev: bool,
 }
 
-impl Deref for Grid {
-    type Target = Vec<Vec<GridSquare>>;
-    fn deref(&self) -> &Self::Target {
-        &self.vec
-    }
-}
-
 impl Index<usize> for Grid {
     type Output = Vec<GridSquare>;
     fn index(&self, index: usize) -> &Self::Output {
@@ -72,9 +65,13 @@ impl From<&str> for Grid {
 }
 
 impl Grid {
+    fn len(&self) -> (usize, usize) {
+        (self.vec[0].len(), self.vec.len())
+    }
+
     fn start_pos(&self) -> Pos {
-        (0..self.len())
-            .cartesian_product(0..self[0].len())
+        (0..self.len().1)
+            .cartesian_product(0..self.len().0)
             .find(|&pos| self[pos].start)
             .expect("No start point defined!")
     }
@@ -87,15 +84,15 @@ impl Grid {
     }
 
     fn get_neighbors(&self, (i, j): Pos) -> impl Iterator<Item = Pos> + '_ {
-        (1.max(i) - 1..=(self.len() - 1).min(i + 1))
+        (1.max(i) - 1..=(self.len().1 - 1).min(i + 1))
             .map(move |i2| (i2, j))
-            .chain((1.max(j) - 1..=(self[0].len() - 1).min(j + 1)).map(move |j2| (i, j2)))
+            .chain((1.max(j) - 1..=(self.len().0 - 1).min(j + 1)).map(move |j2| (i, j2)))
             .filter(move |&to| self.accept_next((i, j), to))
     }
 
     fn bfs(&self) -> usize {
         let start_pos = self.start_pos();
-        let mut visited = vec![vec![false; self[0].len()]; self.len()];
+        let mut visited = vec![vec![false; self.len().0]; self.len().1];
         let mut queue = VecDeque::from([(start_pos, 0)]);
         while let Some((pos, depth)) = queue.pop_front() {
             if visited[pos.0][pos.1] {

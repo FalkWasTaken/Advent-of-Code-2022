@@ -1,4 +1,4 @@
-use utils::{get_input, ExtendedTup};
+use utils::*;
 
 #[derive(PartialEq, Eq)]
 struct Range {
@@ -30,13 +30,11 @@ impl PartialOrd for Range {
     }
 }
 
-impl Range {
-    fn overlaps_with(&self, other: &Range) -> bool {
-        (self.from >= other.from && self.from <= other.to)
-            || (self.to >= other.from && self.to <= other.to)
-            || (other.from >= self.from && other.from <= self.to)
-            || (other.to >= self.from && other.to <= self.to)
-    }
+fn overlaps((a, b): &(Range, Range)) -> bool {
+    (a.from >= b.from && a.from <= b.to)
+        || (a.to >= b.from && a.to <= b.to)
+        || (b.from >= a.from && b.from <= a.to)
+        || (b.to >= a.from && b.to <= a.to)
 }
 
 fn line_to_ranges(line: &str) -> (Range, Range) {
@@ -46,23 +44,19 @@ fn line_to_ranges(line: &str) -> (Range, Range) {
 fn problem1(input: &String) {
     let res = input
         .lines()
-        .map(|l| line_to_ranges(l))
+        .map(line_to_ranges)
         .filter_map(|(r1, r2)| r1.partial_cmp(&r2))
         .count();
     println!("Solution to problem 1: {res}");
 }
 
 fn problem2(input: &String) {
-    let res = input
-        .lines()
-        .map(|l| line_to_ranges(l))
-        .filter(|(r1, r2)| r1.overlaps_with(&r2))
-        .count();
-    println!("Solution to problem 1: {res}");
+    let res = input.lines().map(line_to_ranges).filter(overlaps).count();
+    println!("Solution to problem 2: {res}");
 }
 
 fn main() {
-    let input = get_input(4);
+    let input = input!();
     problem1(&input);
     problem2(&input);
 }

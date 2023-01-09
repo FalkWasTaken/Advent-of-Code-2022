@@ -29,17 +29,17 @@ struct Valve<'a> {
 
 impl Valve<'_> {
     fn parse(s: &str) -> IResult<&str, Valve> {
-        let (s, _) = tag("Valve ")(s)?;
-        let (s, id) = Valve::parse_id(s)?;
+        let parse_id = take(2 as usize);
+        let (s, id) = preceded(tag("Valve "), &parse_id)(s)?;
         let (s, flow_rate) = preceded(tag(" has flow rate="), i32)(s)?;
         let (s, neighbors) = alt((
             preceded(
                 tag("; tunnels lead to valves "),
-                separated_list1(tag(", "), Valve::parse_id),
+                separated_list1(tag(", "), &parse_id),
             ),
             preceded(
                 tag("; tunnel leads to valve "),
-                map(Valve::parse_id, |id: &str| vec![id]),
+                map(&parse_id, |id: &str| vec![id]),
             ),
         ))(s)?;
         let valve = Valve {
@@ -49,10 +49,6 @@ impl Valve<'_> {
             opened: false,
         };
         Ok((s, valve))
-    }
-
-    fn parse_id(s: &str) -> IResult<&str, &str> {
-        take(2 as usize)(s)
     }
 }
 

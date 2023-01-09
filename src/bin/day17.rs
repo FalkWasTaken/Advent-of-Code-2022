@@ -49,7 +49,7 @@ impl Simulator<'_> {
     }
 
     fn highest_point(&self) -> usize {
-        *self.highest_points.iter().max().unwrap() as usize
+        *self.highest_points.iter().max().unwrap()
     }
 
     fn highest_point_absolute(&self) -> usize {
@@ -57,15 +57,15 @@ impl Simulator<'_> {
     }
 
     fn resize(&mut self) {
-        self.grid.rotate_left(GRID_SIZE / 2);
-        self.grid[GRID_SIZE / 2..]
-            .iter_mut()
-            .for_each(|row| row.iter_mut().for_each(|s| *s = false));
-        self.highest_points.iter_mut().for_each(|y| {
-            assert!(*y >= GRID_SIZE / 2);
-            *y -= GRID_SIZE / 2
-        });
         self.base += GRID_SIZE / 2;
+        self.grid.rotate_left(self.base);
+        for row in &mut self.grid[self.base..] {
+            *row = [false; 7];
+        }
+        for y in &mut self.highest_points {
+            assert!(*y >= self.base);
+            *y -= self.base
+        }
         self.num_resizes += 1;
     }
 

@@ -1,4 +1,3 @@
-use itertools::Itertools;
 use std::{
     collections::HashSet,
     ops::{Add, AddAssign, Sub},
@@ -103,7 +102,7 @@ fn solve2(moves: &Vec<Pos>) {
 
 fn main() {
     let input = get_input(9);
-    let moves = input.lines().map(Pos::from).collect_vec();
+    let moves = input.lines().map(Pos::from).collect();
     solve1(&moves);
     solve2(&moves);
 }

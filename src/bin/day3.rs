@@ -1,6 +1,7 @@
+use itertools::Itertools;
 use lazy_static::lazy_static;
 use std::collections::{HashMap, HashSet};
-use utils::{get_input, ExtendedIter};
+use utils::*;
 
 lazy_static! {
     static ref PRIORITIES: HashMap<char, usize> = ('a'..='z')
@@ -15,23 +16,19 @@ fn char_set(s: &str) -> HashSet<char> {
 }
 
 fn solve1(input: &String) {
-    let mut res = 0;
-    for line in input.lines() {
-        let (a, b) = line.split_at(line.len() / 2);
-        let (a, b) = (char_set(a), char_set(b));
-        res += a
-            .intersection(&b)
-            .map(|c| PRIORITIES.get(c).unwrap())
-            .sum::<usize>();
-    }
-    println!("Anser to problem 1: {res}");
+    let res = input
+        .lines()
+        .map(|l| l.split_at(l.len() / 2).map(char_set))
+        .map(|(a, b)| a.intersection(&b).map(|c| PRIORITIES[c]).sum::<usize>())
+        .sum::<usize>();
+    println!("Answer to problem 1: {res}");
 }
 
 fn solve2(input: &String) {
     let res = input
         .lines()
         .map(|s| char_set(s))
-        .collect::<Vec<_>>()
+        .collect_vec()
         .chunks(3)
         .map(|g| (&(&g[0] & &g[1]) & &g[2]))
         .map(|b| PRIORITIES[b.iter().pop()])

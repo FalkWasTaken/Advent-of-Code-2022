@@ -1,7 +1,7 @@
+use itertools::Itertools;
 use num::Integer;
 use utils::*;
 use Operation::*;
-use itertools::Itertools;
 
 #[derive(Clone)]
 enum Operation {
@@ -39,7 +39,7 @@ impl From<&str> for Monkey {
             .trim()
             .trim_start_matches("Starting items: ")
             .split(", ")
-            .flat_map(|s| s.parse())
+            .flat_map(str::parse)
             .collect();
         let op_tokens = lines
             .pop()
@@ -101,7 +101,7 @@ fn solve1(mut monkeys: Vec<Monkey>) {
 }
 
 fn solve2(mut monkeys: Vec<Monkey>) {
-    let lcm = monkeys.iter().map(|m| m.test).reduce(|acc, t| acc.lcm(&t)).unwrap();
+    let lcm = monkeys.iter().fold(1, |acc, m| acc.lcm(&m.test));
     for _ in 0..10_000 {
         for id in 0..monkeys.len() {
             let items = monkeys[id].make_turn(1);
